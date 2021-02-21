@@ -111,16 +111,14 @@ int word(string &textIn, int index, int &len){
     //end of line
     if(index == len)
     {
-   
-        for (auto val : wordVec)
-        {
-            cout << val << ' ';  
-        }
         //call execute with vector, and clear for next line
-        //execute(wordVec);
+        bool pass = execute(wordVec);
         wordVec.clear();
     }
-    return 0;
+    if(pass == true)
+        return 0;
+    else
+        return 1;
 }
 
 bool processLine(string text) {
@@ -148,9 +146,12 @@ bool processLine(string text) {
         else
            index = whiteSpace(text, index, len); 
     }
-    word(text, index, len);
+    int pass = word(text, index, len);
     cout << "\n";
-    return true;
+    if(pass == 0)
+        return true;
+    else
+        return false;
 }
 
 int main(int argc, char *argv[]){
