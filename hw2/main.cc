@@ -79,6 +79,7 @@ int word(string &textIn, int index, int &len){
     static int newIndex;
     string newWord;
     int diff;
+    bool escape = false;
 
     if(index < len)
     {    
@@ -87,15 +88,18 @@ int word(string &textIn, int index, int &len){
     //While the text is not whitespace
     while(isspace(textIn[newIndex]) == 0 && newIndex < len && textIn[newIndex] != '(' && textIn[newIndex] != ')')
     {
-        if(textIn[newIndex] != '\\' && textIn[newIndex] != '(' && textIn[newIndex] != ')')
+        if(textIn[newIndex] != '\\')
             newIndex++;
         else
         {
+            //if(textIn[newIndex+1] == '(' || textIn[newIndex+1] == ')')
+                //escape = true;
         //cout << textIn.substr(index, 5) << '\n'; DEBUG
         //cout << "We found a back-slash!\n"; DEBUG
         textIn.erase(newIndex, 1);
         //cout << "We erased!\n"; DEBUG
-        len -=1;    
+        len -=1;
+        escape = true    
         }
     }
         diff = newIndex-index;
@@ -110,8 +114,9 @@ int word(string &textIn, int index, int &len){
         cout << val << ' ';
         
     }
-    wordVec.clear();
     execute(wordVec);
+    wordVec.clear();
+    
     }
     return 0;
 }
