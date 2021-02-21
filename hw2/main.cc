@@ -5,13 +5,14 @@
  *
  */
 #include <iostream>
-#include <sys/types.h>    // fork() & wait()
-#include <unistd.h>    // fork(), execvp()
-#include <cstdlib>    // exit()
-#include <wait.h>    // wait()
-#include <vector>    // vector<>
-#include <string>    // string
 #include <fstream>    // fstream
+#include <sys/types.h>  // fork() & wait()
+#include <unistd.h>     // fork(), execvp()
+#include <cstdlib>      // exit()
+#include <wait.h>       // wait()
+#include <vector>       // vector<>
+#include <string>       // string
+
 using namespace std;
 
 bool execute(vector<string> command);
@@ -22,41 +23,37 @@ bool processLine(string text);
 
 bool execute(vector<string> command) {
     // Convert vector of C++ strings to an array of C strings for exectp():
-    vector<char *> argv;        // vector of C string pointers
-    for (auto &v : command)        // for each C++ string:
-        argv.push_back(v.data());    //    add address of C-string inside it
-    argv.push_back(nullptr);        // argv ends with a null pointer
-    
-   // Duplicate ourself: -1:error, 0:child, >0:parent
-    const auto pid = fork();        // step #1: copy ourself
+    vector<char *> argv;                // vector of C string pointers
+    for (auto &v : command)             // for each C++ string:
+        argv.push_back(v.data());       //    add address of C-string inside it
+    argv.push_back(nullptr);            // argv ends with a null pointer
+
+    // Duplicate ourself: -1:error, 0:child, >0:parent
+    const auto pid = fork();            // step #1: copy ourself
     if (pid < 0)
-        return false;            // fork failure?
-    if (pid == 0) {            // child?
-        execvp(argv[0], argv.data());    // step #2: replace child with new prog
-        exit(0xff);            // only got here if execvp() failed.
+        return false;                   // fork failure?
+    if (pid == 0) {                     // child?
+        execvp(argv[0], argv.data());   // step #2: replace child with new prog
+        exit(0xff);                     // only got here if execvp() failed.
     }
     int status;
-    wait(&status);            // step #3: wait for child to finish
-    return status != 0xff00;        // true iff we succeeded
+    wait(&status);                      // step #3: wait for child to finish
+    return status != 0xff00;            // true iff we succeeded
 }
 
 int paren(string &textIn, int index, int &len){
 
     if(index < len)
     {
+        //Find the index where there is no paren
         while(textIn[index] == '(' || textIn[index] == ')')
         {
-            //cout << index << '\n';                    DEEBUG
-            //cout << "Were increasing the index\n";     DEGBUG
             index++;   
-            //cout << index << '\n'; DEBUG
         } 
     }
-    //cout << "We found a paren" << index << "\n"; DEBUG
     return index;    
 }
 int whiteSpace(string &textIn, int index, int &len){
-    //static int len = textIn.length();
 
     //Make sure were not at end of string
     if(index < len)
@@ -65,16 +62,15 @@ int whiteSpace(string &textIn, int index, int &len){
         while(isspace(textIn[index]) != 0 && index < len)
         {
             index++;
-        }
-    //Once we no longer have whitespace, call word method  
+        }  
     }
-    //cout << "We found whitespace!" << index << "\n"; DEBUG
+    //When string is no longer whitespace, return index
     return index;
 }
 
 int word(string &textIn, int index, int &len){
+
     //Declare variables to be used in this method
-    //static int len = textIn.length();
     static vector<string> wordVec;
     static int newIndex;
     string newWord;
@@ -86,96 +82,71 @@ int word(string &textIn, int index, int &len){
         newIndex = index;
       
     //While the text is not whitespace
-    while(isspace(textIn[newIndex]) == 0 && newIndex < len && textIn[newIndex] != '(' && textIn[newIndex] != ')')
+    while(isspace(textIn[newIndex]) == 0 && newIndex < len)
     {
-        if(textIn[newIndex] != '\\')
+        //increment index if the character is not \ or ( or ) or an escape sequence
+        if((textIn[newIndex] != '\\' && textIn[newIndex] != '(' && textIn[newIndex] != ')') || escape == true){
+            escape = false;
             newIndex++;
+        }
         else
         {
-            //if(textIn[newIndex+1] == '(' || textIn[newIndex+1] == ')')
-                //escape = true;
-        //cout << textIn.substr(index, 5) << '\n'; DEBUG
-        //cout << "We found a back-slash!\n"; DEBUG
-        textIn.erase(newIndex, 1);
-        //cout << "We erased!\n"; DEBUG
-        len -=1;
-        escape = true    
+            //backslash is found. Get rid of, and note that its an escape sequence 
+            if(textIn[newIndex] == '\\')
+            {
+                textIn.erase(newIndex, 1);
+                len -=1;
+                escape = true;
+            }
+            //otherwise its a paren
+            else
+                break;
         }
     }
-        diff = newIndex-index;
-        //cout << textIn.substr(index, diff) << " " << len << " " << index << " " << newIndex << '\n'; DEBUG 
+        //add word to vector, and return index
+        diff = newIndex-index; 
         wordVec.push_back(textIn.substr(index, diff));
         return newIndex;     
     }
+    //end of line
     if(index == len)
     {
    
-    for (auto val : wordVec){
-        cout << val << ' ';
-        
-    }
-    execute(wordVec);
-    wordVec.clear();
-    
+        for (auto val : wordVec)
+        {
+            cout << val << ' ';  
+        }
+        //call execute with vector, and clear for next line
+        //execute(wordVec);
+        wordVec.clear();
     }
     return 0;
 }
 
-
-//Input format                
-//   The input will be a series of lines.
-//   Each line will consist of a number of whitespace-separated words.
-//   The first word in a line will be the command, the following words will be arguments.
-//   Ignore lines that contain no words.                 
-//   A backslash escapes the next character, making it not special.
-//   The backslash itself does not become part of the word. For example:
-//    'foo\ bar'   = 'foo bar'
-//    'S\pock\(o\) = 'Spock(o)'
-//    '\ Kirk\ '   = ' Kirk  '
-//    'Bo\nes'     = 'Bones'
-//   The effect of a backslash as the last character of a line is undefined. 
-//   \n and \t are not translated into newline and tab.
-//   In the examples below, the echo program is doing that translation, not hw2.                 
-//
-//( and ) are always words by themselves, even if they occur next to other text, unless escaped.                 
-//
-//A non-empty input line must be of this form:
-//
-//command(optional arguments)
-//for example:
-//
-//echo(hi there)
-//If an input line is not of this form, produce an error message and stop the program.                 
-//
-//No special shell syntax is recognized. For example, the characters #*[];'"><|&~ have no particular significance.                 
-
-
 bool processLine(string text) {
-
-    //cout << "You made it here at least" << '\n'; DEBUG
-    cout << "Here's your line: " << text << '\n';
+    
+    //is line empty? Then return to main and get next string
     if(text.empty())
     {
         return true;
     }
-    //cout << text << '\n'; DEBUG
-    //return true; DEBUG
+
     //While loops runs until the length of the line is reached
     int index = 0;
     int len = text.length();
     while(index < len)
     {
-    //The next character is NOT whitespace, so call the appropriate function
-    if(isspace(text[index]) == 0)
-    {
-        if(text[index] != '(' && text[index] != ')')
-            index = word(text, index, len);
+        //The next character is NOT whitespace, so call the appropriate function
+        if(isspace(text[index]) == 0)
+        {
+            if(text[index] != '(' && text[index] != ')')
+                index = word(text, index, len);
+            else
+            index = paren(text, index, len);
+        }
+        //The next character is whitespace, so call the whiteSpace method
         else
-        index = paren(text, index, len);
-    }
-    //The next character is whitespace, so call the whiteSpace method
-    else
-       index = whiteSpace(text, index, len); 
+           index = whiteSpace(text, index, len); 
     }
     word(text, index, len);
     cout << "\n";
@@ -183,6 +154,8 @@ bool processLine(string text) {
 }
 
 int main(int argc, char *argv[]){
+    
+    //vector to store lines
     vector<string> lines;
     //If arguements are given
     if(argc > 1) {
@@ -208,8 +181,12 @@ int main(int argc, char *argv[]){
     }
 
     for(auto line : lines) {
-        bool result = processLine(line);    
+        bool result = processLine(line);
+        //if result is false, something went wrong in processLine. This prints message to user  
+        if(result == false) {
+            cerr << argv[0] << ": can't run: " << line;
+            return 1;
+        }
     }
-
     return 0;
 }

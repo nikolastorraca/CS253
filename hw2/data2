@@ -4,3 +4,5 @@ Line 2
 Line 3
 H\ere a\re so\me \escapes
 echo(hello there)
+Here are some real escapes\\n
+S\pock\(o\)

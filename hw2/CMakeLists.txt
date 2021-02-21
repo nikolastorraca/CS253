@@ -14,7 +14,7 @@ add_compile_options(-Wall)
 # These compile flags are highly recommended, but not required:
 add_compile_options(-Wextra -Wpedantic)
  
-#Optional super-strict mode:
+# Optional super-strict mode:
 #add_compile_options(-fmessage-length=80 -fno-diagnostics-show-option
 #    -fstack-protector-all -g -O3 -std=c++17 -Walloc-zero -Walloca
 #    -Wctor-dtor-privacy -Wduplicated-cond -Wduplicated-branches
